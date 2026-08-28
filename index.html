@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fantasy Draft Horse Race Lottery</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #111827;
+    --panel2: #1f2937;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #22c55e;
+    --accent2: #f59e0b;
+    --line: rgba(255,255,255,.14);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top, rgba(34,197,94,.13), transparent 35%),
+      linear-gradient(180deg, #0b1220, var(--bg));
+    min-height: 100vh;
+  }
+
+  .wrap {
+    width: min(1180px, 94vw);
+    margin: 0 auto;
+    padding: 28px 0 50px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 48px);
+    letter-spacing: -0.04em;
+  }
+
+  .sub {
+    color: var(--muted);
+    margin: 8px 0 22px;
+    line-height: 1.55;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
+  .card {
+    background: rgba(17,24,39,.92);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.24);
+    overflow: hidden;
+  }
+
+  .card-inner { padding: 18px; }
+
+  .section-title {
+    font-size: 14px;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+
+  .horse-row {
+    display: grid;
+    grid-template-columns: 1fr 78px;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  input, select, button {
+    font: inherit;
+  }
+
+  input {
+    width: 100%;
+    background: #0b1220;
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 12px;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: rgba(34,197,94,.8);
+    box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+  }
+
+  .weight {
+    text-align: center;
+  }
+
+  .help {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+    margin-top: 8px;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  button {
+    border: 0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-weight: 800;
+    transition: transform .15s ease, opacity .15s ease;
+  }
+
+  button:hover { transform: translateY(-1px); }
+  button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+  .primary {
+    background: var(--accent);
+    color: #052e16;
+  }
+
+  .secondary {
+    background: #334155;
+    color: var(--text);
+  }
+
+  .race-card {
+    min-height: 520px;
+  }
+
+  .track-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255,255,255,.02);
+  }
+
+  .status {
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .track {
+    position: relative;
+    padding: 18px 20px 22px;
+    overflow: hidden;
+  }
+
+  .lane {
+    position: relative;
+    height: 95px;
+    border-top: 1px dashed rgba(255,255,255,.18);
+    border-bottom: 1px dashed rgba(255,255,255,.08);
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,.025) 0,
+        rgba(255,255,255,.025) 40px,
+        transparent 40px,
+        transparent 80px
+      );
+  }
+
+  .lane:first-child { border-top: 0; }
+
+  .name-label {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    z-index: 2;
+    font-size: 12px;
+    font-weight: 900;
+    background: rgba(15,23,42,.82);
+    padding: 5px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .finish {
+    position: absolute;
+    right: 56px;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background:
+      linear-gradient(45deg,#fff 25%,#111 25%,#111 50%,#fff 50%,#fff 75%,#111 75%);
+    background-size: 10px 10px;
+    opacity: .95;
+  }
+
+  .finish-label {
+    position: absolute;
+    right: 30px;
+    top: 4px;
+    font-size: 11px;
+    font-weight: 900;
+    transform: rotate(90deg);
+    transform-origin: center;
+    color: #e2e8f0;
+  }
+
+  .horse {
+    position: absolute;
+    left: 0%;
+    bottom: 10px;
+    width: 64px;
+    height: 54px;
+    transform: translateX(0);
+    transition: left .11s linear;
+    z-index: 3;
+    filter: drop-shadow(0 6px 4px rgba(0,0,0,.3));
+  }
+
+  .horse .emoji {
+    font-size: 43px;
+    display: block;
+    transform: scaleX(-1);
+  }
+
+  .horse .bib {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    min-width: 26px;
+    height: 24px;
+    padding: 2px 6px;
+    border-radius: 7px;
+    background: #f8fafc;
+    color: #111827;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 1000;
+    border: 2px solid #111827;
+  }
+
+  .finished .emoji {
+    animation: bob .4s ease-in-out infinite alternate;
+  }
+
+  @keyframes bob {
+    from { transform: scaleX(-1) translateY(0); }
+    to { transform: scaleX(-1) translateY(-4px); }
+  }
+
+  .results {
+    margin-top: 16px;
+    display: none;
+  }
+
+  .results.show { display: block; }
+
+  .result-row {
+    display: grid;
+    grid-template-columns: 46px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 12px;
+    border-top: 1px solid var(--line);
+  }
+
+  .place {
+    font-size: 22px;
+    font-weight: 1000;
+  }
+
+  .result-name { font-weight: 800; }
+  .result-note { color: var(--muted); font-size: 12px; }
+
+  .odds-box {
+    margin-top: 14px;
+    padding: 12px;
+    background: #0b1220;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+
+  .odds-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: #cbd5e1;
+    font-size: 13px;
+    padding: 4px 0;
+  }
+
+  .locked-box {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .locked-row {
+    display: grid;
+    grid-template-columns: 42px 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .locked-row span {
+    font-weight: 900;
+    color: #cbd5e1;
+    text-align: right;
+  }
+
+  .final-order {
+    margin-top: 18px;
+    background: #0b1220;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .final-order h3 {
+    margin: 0;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  .final-row {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 10px;
+    padding: 9px 14px;
+    border-top: 1px solid rgba(255,255,255,.07);
+    font-size: 14px;
+  }
+
+  .final-row:first-of-type { border-top: 0; }
+
+  @media (max-width: 860px) {
+    .grid { grid-template-columns: 1fr; }
+    .race-card { min-height: auto; }
+    .track { padding-left: 10px; padding-right: 10px; }
+    .finish { right: 38px; }
+    .finish-label { right: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fantasy Draft Horse Race Lottery</h1>
+  <p class="sub">
+    Race four horses for Picks #1–#4. Name each horse, set its exact chance to win the #1 pick, then run the race. The first horse across receives Pick #1, second gets #2, and so on. The race does not end until every horse crosses the finish line.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-inner">
+        <div class="section-title">Lottery Horses</div>
+
+        <div id="horseInputs"></div>
+
+        <div class="odds-box" id="oddsBox"></div>
+
+        <div class="controls">
+          <button id="startBtn" class="primary">Start Race</button>
+          <button id="resetBtn" class="secondary">Reset</button>
+        </div>
+
+        <div class="help">
+          Set each horse's chance to win the #1 overall pick. The four percentages must add up to 100%. The race winner is selected using these exact probabilities; the animation then reveals the result.
+        </div>
+
+        <div class="locked-box">
+          <div class="section-title">Locked Picks 5–12</div>
+          <div id="lockedInputs"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card race-card">
+      <div class="track-head">
+        <strong>Race Track</strong>
+        <div class="status" id="status">Ready to race</div>
+      </div>
+
+      <div class="track" id="track">
+        <div class="finish"></div>
+        <div class="finish-label">FINISH</div>
+      </div>
+
+      <div class="results" id="results">
+        <div class="card-inner" style="padding-top:0">
+          <div class="section-title">Lottery Results</div>
+          <div id="resultsList"></div>
+
+          <div class="final-order">
+            <h3>Full Draft Order</h3>
+            <div id="finalOrder"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const horseDefaults = [
+  { name: "Ajit", odds: 10 },
+  { name: "Manvir", odds: 20 },
+  { name: "Kyle", odds: 30 },
+  { name: "Maninder", odds: 40 }
+];
+
+let running = false;
+let animationId = null;
+let raceState = [];
+
+const horseInputs = document.getElementById("horseInputs");
+const lockedInputs = document.getElementById("lockedInputs");
+const oddsBox = document.getElementById("oddsBox");
+const track = document.getElementById("track");
+const statusEl = document.getElementById("status");
+const results = document.getElementById("results");
+const resultsList = document.getElementById("resultsList");
+const finalOrder = document.getElementById("finalOrder");
+const startBtn = document.getElementById("startBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+function makeInputs() {
+  horseInputs.innerHTML = "";
+  horseDefaults.forEach((h, i) => {
+    const row = document.createElement("div");
+    row.className = "horse-row";
+    row.innerHTML = `
+      <input id="name${i}" value="${h.name}" aria-label="Horse ${i+1} name" />
+      <input id="weight${i}" class="weight" type="number" min="0" max="100" step="0.1" value="${h.odds}" aria-label="Horse ${i+1} win odds percent" title="Chance to win #1 overall" />
+    `;
+    horseInputs.appendChild(row);
+  });
+
+  lockedInputs.innerHTML = "";
+  for (let pick = 5; pick <= 12; pick++) {
+    const row = document.createElement("div");
+    row.className = "locked-row";
+    row.innerHTML = `<span>#${pick}</span><input id="locked${pick}" placeholder="Team / Manager" />`;
+    lockedInputs.appendChild(row);
+  }
+
+  document.querySelectorAll("#horseInputs input").forEach(el => {
+    el.addEventListener("input", updateOdds);
+  });
+}
+
+function getHorseData() {
+  return horseDefaults.map((_, i) => ({
+    id: i,
+    name: document.getElementById(`name${i}`).value.trim() || `Horse ${i+1}`,
+    odds: Math.max(0, Math.min(100, Number(document.getElementById(`weight${i}`).value) || 0))
+  }));
+}
+
+function updateOdds() {
+  const data = getHorseData();
+  const total = data.reduce((s,h) => s + h.odds, 0);
+  const valid = Math.abs(total - 100) < 0.01;
+
+  oddsBox.innerHTML =
+    `<div class="section-title" style="margin-bottom:6px">Chance to Win #1 Overall</div>` +
+    data.map(h => `
+      <div class="odds-line">
+        <span>${escapeHtml(h.name)}</span>
+        <strong>${h.odds.toFixed(1)}%</strong>
+      </div>
+    `).join("") +
+    `<div class="odds-line" style="border-top:1px solid rgba(255,255,255,.12);margin-top:5px;padding-top:8px">
+      <span>Total</span>
+      <strong style="color:${valid ? '#86efac' : '#fca5a5'}">${total.toFixed(1)}%</strong>
+    </div>` +
+    `<div class="help" style="color:${valid ? '#94a3b8' : '#fca5a5'}">
+      ${valid ? 'Odds are valid and ready to race.' : 'Adjust the percentages so they total exactly 100%.'}
+    </div>`;
+
+  startBtn.disabled = running || !valid;
+}
+
+function escapeHtml(text) {
+  return text.replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[c]));
+}
+
+function setupTrack(data) {
+  [...track.querySelectorAll(".lane")].forEach(el => el.remove());
+
+  data.forEach((h, i) => {
+    const lane = document.createElement("div");
+    lane.className = "lane";
+    lane.dataset.id = h.id;
+    lane.innerHTML = `
+      <div class="name-label">${escapeHtml(h.name)}</div>
+      <div class="horse" id="horse${h.id}" style="left:0%">
+        <span class="emoji">🏇</span>
+        <span class="bib">${i+1}</span>
+      </div>
+    `;
+    track.insertBefore(lane, track.querySelector(".finish"));
+  });
+}
+
+function weightedPick(items) {
+  const total = items.reduce((s, h) => s + h.odds, 0);
+  if (total <= 0) return items[Math.floor(Math.random() * items.length)];
+  let r = Math.random() * total;
+  for (const h of items) {
+    r -= h.odds;
+    if (r <= 0) return h;
+  }
+  return items[items.length - 1];
+}
+
+function makeFinishOrder(data) {
+  // #1 is chosen with the exact percentages entered by the user.
+  // Remaining places are selected without replacement using the remaining relative weights.
+  const remaining = data.map(h => ({...h}));
+  const order = [];
+  while (remaining.length) {
+    const chosen = weightedPick(remaining);
+    order.push(chosen);
+    remaining.splice(remaining.findIndex(h => h.id === chosen.id), 1);
+  }
+  return order;
+}
+
+function weightedRaceProfile(data) {
+  const order = makeFinishOrder(data);
+  const finishTargets = [18.6, 19.25, 19.9, 20.55];
+
+  return data.map((h, i) => {
+    const place = order.findIndex(x => x.id === h.id);
+    return {
+      ...h,
+      progress: 0,
+      finished: false,
+      finishTime: null,
+      targetSeconds: finishTargets[place] + (Math.random() * 0.18 - 0.09),
+      phase: Math.random() * Math.PI * 2,
+      dramaPhase: Math.random() * Math.PI * 2,
+      place
+    };
+  });
+}
+
+function startRace() {
+  if (running) return;
+
+  results.classList.remove("show");
+  resultsList.innerHTML = "";
+  finalOrder.innerHTML = "";
+
+  const data = getHorseData();
+  setupTrack(data);
+  raceState = weightedRaceProfile(data);
+
+  running = true;
+  startBtn.disabled = true;
+  statusEl.textContent = "They’re off! The field is charging down the track...";
+
+  const start = performance.now();
+  let last = start;
+
+  function tick(now) {
+    const dt = Math.min(40, now - last);
+    last = now;
+
+    let finishedCount = 0;
+
+    raceState.forEach((h, idx) => {
+      if (h.finished) {
+        finishedCount++;
+        return;
+      }
+
+      const t = (now - start) / 1000;
+      const target = h.targetSeconds;
+
+      // Base progress aims each horse at its predetermined finish time.
+      const base = (t / target) * 100;
+
+      // Oscillations create visible lead changes without changing the final weighted result.
+      const earlyDrama = Math.max(0, 1 - (t / Math.max(1, target)) ** 2.3);
+      const wave1 = Math.sin(t * (1.05 + idx * 0.07) + h.phase) * 5.2 * earlyDrama;
+      const wave2 = Math.sin(t * 2.15 + h.dramaPhase) * 2.0 * earlyDrama;
+
+      // Late stretch run gradually removes temporary offsets so the chosen order resolves naturally.
+      const stretch = t > target - 5 ? Math.max(0, (target - t) / 5) : 1;
+      const dramaticOffset = (wave1 + wave2) * stretch;
+
+      h.progress = Math.max(h.progress, Math.min(99.4, base + dramaticOffset));
+
+      // Only cross when this horse reaches its assigned finish time.
+      if (t >= target) {
+        h.progress = 100;
+      }
+
+      if (h.progress >= 100) {
+        h.progress = 100;
+        h.finished = true;
+        h.finishTime = now - start;
+        finishedCount++;
+
+        const horseEl = document.getElementById(`horse${h.id}`);
+        horseEl.classList.add("finished");
+      }
+
+      const horseEl = document.getElementById(`horse${h.id}`);
+      horseEl.style.left = `calc(${Math.min(h.progress, 100)}% - ${Math.min(h.progress, 100) * 0.62}px)`;
+    });
+
+    const rankedFinished = raceState
+      .filter(h => h.finished)
+      .sort((a,b) => a.finishTime - b.finishTime);
+
+    if (rankedFinished.length > 0 && rankedFinished.length < raceState.length) {
+      const latest = rankedFinished[rankedFinished.length - 1];
+      statusEl.textContent = `${latest.name} is across in ${ordinal(rankedFinished.length)} — the rest are still battling to the line...`;
+    }
+
+    // Critical: race only ends when ALL horses have crossed.
+    if (finishedCount === raceState.length) {
+      running = false;
+      startBtn.disabled = false;
+      statusEl.textContent = "All horses have crossed. Race complete.";
+      showResults();
+      return;
+    }
+
+    animationId = requestAnimationFrame(tick);
+  }
+
+  animationId = requestAnimationFrame(tick);
+}
+
+function ordinal(n) {
+  return n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
+}
+
+function showResults() {
+  const ranked = [...raceState].sort((a,b) => a.finishTime - b.finishTime);
+
+  resultsList.innerHTML = ranked.map((h, index) => `
+    <div class="result-row">
+      <div class="place">${index + 1}</div>
+      <div>
+        <div class="result-name">${escapeHtml(h.name)}</div>
+        <div class="result-note">${(h.finishTime / 1000).toFixed(2)} seconds</div>
+      </div>
+      <strong>Pick #${index + 1}</strong>
+    </div>
+  `).join("");
+
+  let full = ranked.map((h, i) => ({ pick: i + 1, name: h.name }));
+
+  for (let pick = 5; pick <= 12; pick++) {
+    const val = document.getElementById(`locked${pick}`).value.trim() || "Locked by standings";
+    full.push({ pick, name: val });
+  }
+
+  finalOrder.innerHTML = full.map(r => `
+    <div class="final-row">
+      <strong>#${r.pick}</strong>
+      <span>${escapeHtml(r.name)}</span>
+    </div>
+  `).join("");
+
+  results.classList.add("show");
+  results.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function resetRace() {
+  if (animationId) cancelAnimationFrame(animationId);
+  running = false;
+  statusEl.textContent = "Ready to race";
+  updateOdds();
+  results.classList.remove("show");
+  resultsList.innerHTML = "";
+  finalOrder.innerHTML = "";
+  setupTrack(getHorseData());
+}
+
+startBtn.addEventListener("click", startRace);
+resetBtn.addEventListener("click", resetRace);
+
+makeInputs();
+updateOdds();
+setupTrack(getHorseData());
+</script>
+</body>
+</html>

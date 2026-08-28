@@ -135,6 +135,42 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .lineupItem{border:1px solid var(--line);border-radius:6px;padding:8px;font-size:11px;background:rgba(0,0,0,.12);min-width:0}
 .lineupItem strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:520px){.startingLineup{grid-template-columns:repeat(2,1fr)}}
+
+.footballStrip{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:0 0 12px;padding:8px 12px;border:1px solid var(--line);border-radius:7px;
+  background:linear-gradient(90deg,rgba(103,24,36,.5),rgba(38,5,13,.75));
+  color:var(--gold2);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em
+}
+.footballStrip span{white-space:nowrap}
+.fieldMarkings{
+  position:absolute;inset:5px 14px 12px;pointer-events:none;z-index:1;
+  background:
+    linear-gradient(90deg,
+      transparent 0 9.8%,rgba(255,255,255,.08) 10% 10.25%,transparent 10.4% 19.8%,
+      rgba(255,255,255,.08) 20% 20.25%,transparent 20.4% 29.8%,
+      rgba(255,255,255,.08) 30% 30.25%,transparent 30.4% 39.8%,
+      rgba(255,255,255,.08) 40% 40.25%,transparent 40.4% 49.8%,
+      rgba(255,255,255,.12) 50% 50.35%,transparent 50.5% 59.8%,
+      rgba(255,255,255,.08) 60% 60.25%,transparent 60.4% 69.8%,
+      rgba(255,255,255,.08) 70% 70.25%,transparent 70.4% 79.8%,
+      rgba(255,255,255,.08) 80% 80.25%,transparent 80.4% 89.8%,
+      rgba(255,255,255,.08) 90% 90.25%,transparent 90.4%);
+}
+.draftTitle{
+  display:inline-flex;align-items:center;gap:7px;padding:4px 8px;border-radius:999px;
+  background:rgba(215,166,45,.11);border:1px solid var(--line);color:var(--gold2);
+  font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;margin-top:7px
+}
+.pickMeta{color:var(--gold2);font-size:10px;font-weight:800}
+.result strong{font-size:13px}
+.results{background:linear-gradient(180deg,rgba(15,2,6,.15),rgba(0,0,0,.12))}
+@media(max-width:760px){
+  .footballStrip{font-size:9px;gap:4px;padding:7px 8px}
+  .footballStrip span:nth-child(2){display:none}
+  .fieldMarkings{inset-left:5px;inset-right:5px}
+}
+
 </style>
 </head>
 <body>
@@ -143,10 +179,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <div class="heroIcon">🏇</div>
     <div>
       <h1>Watch Live Lottery</h1>
-      <p class="sub">Watch the live fantasy draft lottery in real time.</p>
+      <p class="sub">Watch the live fantasy draft lottery in real time.</p><div class="draftTitle">🏈 Fantasy Football Draft Lottery</div>
     </div>
   </div>
 
+  <div class="footballStrip">
+    <span>🏈 No Name Fantasy League</span>
+    <span>Live Draft Lottery</span>
+    <span>First Across = Pick #1</span>
+  </div>
   <div class="card statusCard">
     <div class="waitingBox" id="waitingBox">
       ⏳ &nbsp; STATUS: WAITING FOR COMMISSIONER TO START THE RACE
@@ -158,17 +199,17 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
   <div class="card">
     <div class="status" id="status">Status: Waiting for Commissioner</div>
-    <div class="section" style="padding:0 14px">Starting Lineup</div>
+    <div class="section" style="padding:0 14px">Lottery Starting Lineup</div>
     <div class="startingLineup" id="lineup"></div>
     <div class="trackHead"><span>START</span><span>FINISH</span></div>
-    <div class="track" id="track"><div class="finish"></div></div>
+    <div class="track" id="track"><div class="fieldMarkings"></div><div class="finish"></div></div>
 
     <div class="results">
-      <div class="section">Final Draft Order (1–12)</div>
+      <div class="section">Official Draft Board (1–12)</div>
       <div id="resultsList"></div>
     </div>
   </div>
-  <div class="footer">Picks 1–4 determined by lottery race • Picks 5–12 locked by commissioner</div>
+  <div class="footer">🏈 Picks 1–4 determined by lottery race • Picks 5–12 locked by standings • Draft board updates live</div>
 </div>
 
 <script type="module">
@@ -323,8 +364,23 @@ onValue(ref(db,"race"),snap=>{
 
     if(payload?.status==="complete"){
       showCompleted(payload);
+    } else if(payload?.status==="setup"){
+      showWaiting(payload.horses||defaultHorses());
+      renderDraftOrder({
+        horses:payload.horses||defaultHorses(),
+        order:(payload.horses||defaultHorses()).map(h=>h.id),
+        locked:payload.locked||{}
+      });
+      document.getElementById("status").textContent="Status: Lineup Set — Waiting for Commissioner";
     } else {
       showWaiting(payload?.horses||defaultHorses());
+      if(payload?.horses){
+        renderDraftOrder({
+          horses:payload.horses,
+          order:payload.horses.map(h=>h.id),
+          locked:payload.locked||{}
+        });
+      }
     }
     return;
   }
@@ -332,6 +388,19 @@ onValue(ref(db,"race"),snap=>{
   if(!payload || payload.status==="waiting"){
     activeRaceId=null;
     showWaiting(defaultHorses());
+    renderDraftOrder(null);
+    return;
+  }
+
+  if(payload.status==="setup"){
+    activeRaceId=null;
+    showWaiting(payload.horses||defaultHorses());
+    renderDraftOrder({
+      horses:payload.horses||defaultHorses(),
+      order:(payload.horses||defaultHorses()).map(h=>h.id),
+      locked:payload.locked||{}
+    });
+    document.getElementById("status").textContent="Status: Lineup Set — Waiting for Commissioner";
     return;
   }
 

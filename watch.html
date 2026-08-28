@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fantasy Odds Host</title><style>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fantasy Draft Lottery Live</title><style>
 :root{--bg:#08111f;--panel:#111827;--text:#f8fafc;--muted:#94a3b8;--green:#22c55e;--line:rgba(255,255,255,.14)}
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top,rgba(34,197,94,.12),transparent 35%),var(--bg);color:var(--text);min-height:100vh}
 .wrap{width:min(1180px,94vw);margin:auto;padding:28px 0 48px}h1{font-size:clamp(28px,4vw,48px);margin:0;letter-spacing:-.04em}.sub{color:var(--muted);line-height:1.5}
@@ -14,11 +14,9 @@ input,button{font:inherit}input{width:100%;background:#08111f;color:white;border
 .waiting{text-align:center;padding:36px 20px;color:#cbd5e1;font-size:20px;font-weight:800}
 @media(max-width:850px){.grid{grid-template-columns:1fr}.track{padding-left:8px;padding-right:8px}.finish{right:42px}}
 </style></head>
-<body><div class="wrap"><h1>Commissioner Race Control</h1><p class="sub">Set the horses and odds, then start one synchronized race for everyone watching.</p>
-<div class="grid"><div class="card"><div class="pad"><div class="section">Lottery Horses</div><div id="inputs"></div><div class="odds" id="odds"></div>
-<div class="buttons"><button class="primary" id="start">Start Live Race</button><button class="secondary" id="reset">Reset</button></div>
-<div class="section">Locked Picks 5–12</div><div id="locked"></div></div></div>
-<div class="card"><div class="status" id="status">Ready to race</div><div class="track" id="track"><div class="finish"></div></div><div class="results" id="results"><div class="section" style="padding:0 16px">Results</div><div id="resultsList"></div></div></div></div></div>
+<body><div class="wrap"><h1>Fantasy Draft Lottery</h1><p class="sub">Live race feed. The first horse across receives the #1 overall pick.</p>
+<div class="card"><div class="status" id="status">Waiting for commissioner to start the race…</div><div class="track" id="track"><div class="finish"></div><div class="waiting" id="waiting">🏇 Waiting for the live race…</div></div>
+<div class="results" id="results"><div class="section" style="padding:0 16px">Official Results</div><div id="resultsList"></div></div></div></div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getDatabase, ref, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
@@ -95,21 +93,18 @@ function showResults(horses,payload){
   document.getElementById("results").classList.add("show");
 }
 
-const defaults=[["Horse 1",55],["Horse 2",24],["Horse 3",13],["Horse 4",8]];
-const inputs=document.getElementById("inputs");
-defaults.forEach((d,i)=>{inputs.insertAdjacentHTML("beforeend",`<div class="row"><input id="n${i}" value="${d[0]}"><input id="o${i}" type="number" min="0" max="100" step=".01" value="${d[1]}"></div>`)});
-for(let p=5;p<=12;p++)document.getElementById("locked").insertAdjacentHTML("beforeend",`<div class="locked"><strong>#${p}</strong><input id="l${p}" placeholder="Team / Manager"></div>`);
-function data(){return defaults.map((_,i)=>({id:i,name:document.getElementById("n"+i).value.trim()||`Horse ${i+1}`,odds:Math.max(0,Math.min(100,Number(document.getElementById("o"+i).value)||0))}))}
-function updateOdds(){
- const d=data(),tot=d.reduce((s,h)=>s+h.odds,0),ok=Math.abs(tot-100)<.01;
- document.getElementById("odds").innerHTML=d.map(h=>`<div class="oddline"><span>${esc(h.name)}</span><strong>${h.odds.toFixed(2)}%</strong></div>`).join("")+`<div class="oddline" style="border-top:1px solid var(--line);margin-top:5px;padding-top:8px"><span>Total</span><strong>${tot.toFixed(2)}%</strong></div>`;
- document.getElementById("start").disabled=!ok;
-}
-inputs.addEventListener("input",updateOdds);updateOdds();setupTrack(data());
-document.getElementById("start").addEventListener("click",async()=>{
- const horses=data(); const order=finishOrder(horses).map(h=>h.id); const locked={};for(let p=5;p<=12;p++)locked[p]=document.getElementById("l"+p).value.trim();
- const payload={status:"running",horses,order,locked,seed:Math.random()*1000000,createdAt:Date.now()};
- await set(ref(db,"race"),payload);runAnimation(payload);
+let lastRace=null;
+onValue(ref(db,"race"),snap=>{
+ const payload=snap.val();
+ if(!payload||payload.status!=="running"){
+   document.getElementById("status").textContent="Waiting for commissioner to start the race…";
+   document.getElementById("waiting").style.display="block";
+   document.getElementById("results").classList.remove("show");
+   lastRace=null; return;
+ }
+ if(lastRace===payload.createdAt)return;
+ lastRace=payload.createdAt;
+ document.getElementById("waiting").style.display="none";
+ runAnimation(payload);
 });
-document.getElementById("reset").addEventListener("click",async()=>{await set(ref(db,"race"),{status:"waiting",updatedAt:Date.now()});document.getElementById("status").textContent="Ready to race";document.getElementById("results").classList.remove("show");setupTrack(data())});
 </script></body></html>

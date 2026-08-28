@@ -90,8 +90,13 @@ function runAnimation(payload){
 }
 function showResults(horses,payload){
   const ranked=[...horses].sort((a,b)=>a.place-b.place);
-  const list=document.getElementById("resultsList");
-  list.innerHTML=ranked.map((h,i)=>`<div class="result"><div class="place">${i+1}</div><div><strong>${esc(h.name)}</strong><div class="muted">${h.odds.toFixed(2)}% starting chance at #1</div></div><strong>Pick #${i+1}</strong></div>`).join("");
+  const lotteryRows=ranked.map((h,i)=>`<div class="result"><div class="place">${i+1}</div><div><strong>${esc(h.name)}</strong><div class="muted">${h.odds.toFixed(2)}% starting chance at #1</div></div><strong>Pick #${i+1}</strong></div>`);
+  const lockedRows=[];
+  for(let pick=5;pick<=12;pick++){
+    const name=(payload.locked && payload.locked[pick]) ? payload.locked[pick] : `Pick #${pick}`;
+    lockedRows.push(`<div class="result"><div class="place">${pick}</div><div><strong>${esc(name)}</strong><div class="muted">Locked by standings</div></div><strong>Pick #${pick}</strong></div>`);
+  }
+  document.getElementById("resultsList").innerHTML=[...lotteryRows,...lockedRows].join("");
   document.getElementById("results").classList.add("show");
 }
 
